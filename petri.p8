@@ -4,7 +4,7 @@ __lua__
 -- cells
 -- by lewsidboi/smolboigames, 2020
 
-version="a.0.6"
+version="a.0.7"
 
 --game parameters
 cells={}
@@ -13,19 +13,20 @@ food={}
 upkeep={frames=0,seconds=0}
 
 config={
-	food_sparsity=5,--higher=less
-	food_rate=1,--higher=slower
-	spawn_count=5,
-	border=0,
-	mutation_rate=5,
-	start_move_count=20,
-	max_moves=200,
-	food_col=4,
-	show_ui=true
+	food_sparsity=10,	--higher=less
+	food_rate=1,		--higher=slower
+	spawn_count=1,		--initial number of cells
+	border=0,			--trap them in if you want
+	mutation_rate=2, 	--higher=more mutations per birth
+	start_move_count=20,--base number of moves per cell
+	max_moves=60,		--max number of moves stored in DNA
+	food_col=4,			--color of food
+	show_ui=true		--show stats
 }
 
 stats={
 	births=0,
+	deaths=0,
 	generation=0,
 	food_count=0
 }
@@ -112,9 +113,14 @@ function init_cell(parent)
 		cell["dna"]=copy(parent["dna"])
  
 		--add pattern mutation(s)
-		for i=0,config.mutation_rate do  
+		for i=1,config.mutation_rate do  
 			if(#cell["dna"]["pattern"]+1<config.max_moves) then
 				cell["dna"]["pattern"][#cell["dna"]["pattern"]+1]=flr(rnd(4))+1
+			else
+				--max moves was reached, randomly replace an existing one
+				--this prevents eventual out-of-memory issues
+				local slot = rnd(#cell["dna"]["pattern"])+1;
+				cell["dna"]["pattern"][slot]=flr(rnd(4))+1
 			end
 		end
   
@@ -130,8 +136,8 @@ function init_cell(parent)
 		printh(output)
 	else
 		--set random attributes
-		cell["dna"]["speed"]=flr(rnd(4))
-		cell["dna"]["heartiness"]=flr(rnd(4))
+		cell["dna"]["agility"]=flr(rnd(4))+1
+		cell["dna"]["heartiness"]=flr(rnd(4))+1
 		cell["dna"]["pattern"]={}
  
 		for i=1,config.start_move_count do
@@ -164,13 +170,16 @@ function update_cell(cell)
 	--handle cell death
 	if(cell.state=="dead") then
 		del(cells,cell)
+
+		--death sound
+		sfx(1)
 		
 		--turn it into food
 		food[cell.x][cell.y]=1
 		stats.food_count+=1
 		
-		--death sound
-		--sfx(1)
+		--count it
+		stats.deaths+=1
 		 
 		return false
 	end
@@ -215,7 +224,7 @@ function update_cell(cell)
 		cell.dir_x=-1
 		cell.dir_y=0
 	end
-	
+
 	--update cell move
 	cell.x+=cell.dir_x
 	cell.y+=cell.dir_y
@@ -276,17 +285,20 @@ function draw_food()
 end
 
 function draw_ui()
-	print("cells: "..#cells,2,2,1)
-	print("cells: "..#cells,1,1,7)
+	print("alive: "..#cells,2,2,1)
+	print("alive: "..#cells,1,1,7)
 	
-	print("children: "..stats.births,2,9,1)
-	print("children: "..stats.births,1,8,7)
+	print("births: "..stats.births,2,9,1)
+	print("births: "..stats.births,1,8,7)
 	
-	print("food: "..stats.food_count,2,16,1)
-	print("food: "..stats.food_count,1,15,7)
+	print("deaths: "..stats.deaths,2,16,1)
+	print("deaths: "..stats.deaths,1,15,7)
 
-	print("gen: "..stats.generation,2,23,1)
-	print("gen: "..stats.generation,1,22,7)
+	print("food: "..stats.food_count,2,23,1)
+	print("food: "..stats.food_count,1,22,7)
+
+	print("gen: "..stats.generation,2,30,1)
+	print("gen: "..stats.generation,1,29,7)
 end
 
 function draw_cell(cell)
@@ -345,4 +357,4 @@ __gfx__
 00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 00030000157001674018700197401a7001b7401c7001f740217002274025700267402670000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0002000010550024000d5500050008550024000555003400034000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00010000100500e050100500050008500024000550003400034000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
