@@ -1,10 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 29
 __lua__
--- cells
+-- petri
 -- by lewsidboi/smolboigames, 2020
 
-version="a.0.7"
+version="a.0.8"
 
 --game parameters
 cells={}
@@ -13,10 +13,10 @@ food={}
 upkeep={frames=0,seconds=0}
 
 config={
-	food_sparsity=10,	--higher=less
+	food_sparsity=5,	--higher=less
 	food_rate=1,		--higher=slower
-	spawn_count=1,		--initial number of cells
-	border=0,			--trap them in if you want
+	spawn_count=10,		--initial number of cells
+	border=1,			--trap them in if you want
 	mutation_rate=2, 	--higher=more mutations per birth
 	start_move_count=20,--base number of moves per cell
 	max_moves=60,		--max number of moves stored in DNA
@@ -40,14 +40,14 @@ function _init()
 end
 
 function _update()
- --clock upkeep
+	--clock upkeep
 	upkeep.seconds=upkeep.frames/30
 	upkeep.frames+=1
 	
 	--respawn food
 	if(flr(rnd(config.food_rate))==0
-	 and #cells>0) then
-	 init_pellet()
+		and #cells>0) then
+		init_pellet()
 	end
 	
 	--update cells
@@ -60,7 +60,7 @@ function _update()
 end
 
 function _draw()
-	cls()
+	cls(0)
 	foreach(cells,draw_cell)
 	draw_food()
 	if(config.show_ui) draw_ui()
@@ -98,7 +98,7 @@ function init_cell(parent)
 		health=10,x=64,y=64,
 		col=3,dir_x=0,dir_y=0,
 		last_check=0,
-		last_move=1,
+		last_dir=1,
 		state="alive",
 		dna={}
 	}
@@ -107,7 +107,7 @@ function init_cell(parent)
 		--spawn on parent
 		cell.x=parent.x
 		cell.y=parent.y
-		cell.last_move=1
+		cell.last_dir=1
 	
 		--inherit dna
 		cell["dna"]=copy(parent["dna"])
@@ -123,27 +123,31 @@ function init_cell(parent)
 				cell["dna"]["pattern"][slot]=flr(rnd(4))+1
 			end
 		end
-  
-		--output move list
-		local output="["
-		for i=1,#cell["dna"]["pattern"] do
-			output=output..cell["dna"]["pattern"][i];
-			if(i!=#cell["dna"]["pattern"]) then
-				output=output.."|"
-			end  
-		end
-		output=output.."]"
-		printh(output)
 	else
 		--set random attributes
-		cell["dna"]["agility"]=flr(rnd(4))+1
-		cell["dna"]["heartiness"]=flr(rnd(4))+1
+		cell["dna"]["agility"]=flr(rnd(10))+1
+		cell["dna"]["speed"]=flr(rnd(10))+1
+		cell["dna"]["heartiness"]=flr(rnd(10))+1
 		cell["dna"]["pattern"]={}
  
 		for i=1,config.start_move_count do
 			cell["dna"]["pattern"][i]=flr(rnd(4))+1
 		end
 	end
+
+	--output DNA
+	local output="["
+	output=output.."(agility: "..cell["dna"]["agility"]..")"
+	output=output.."(heartiness: "..cell["dna"]["heartiness"]..")"
+	output=output.."(speed: "..cell["dna"]["speed"]..")(moves: "
+	for i=1,#cell["dna"]["pattern"] do
+		output=output..cell["dna"]["pattern"][i];
+		if(i!=#cell["dna"]["pattern"]) then
+			output=output.."|"
+		end  
+	end
+	output=output..")]"
+	printh(output)
  
 	--update generation counter
 	local dif=#cell["dna"]["pattern"]-config.start_move_count
@@ -205,43 +209,62 @@ function update_cell(cell)
 		new_cell=init_cell(cell)
 		stats.births+=1
 	end
-	
-	local move=cell["dna"]["pattern"][cell.last_move]
-	if(move==1) then
-		--right
-		cell.dir_x=1
-		cell.dir_y=0
-	elseif(move==2) then
-		--down
-		cell.dir_x=0
-		cell.dir_y=1
-	elseif(move==3) then
-		--up
-		cell.dir_x=0
-		cell.dir_y=-1
-	elseif(move==4) then
-		--left
-		cell.dir_x=-1
-		cell.dir_y=0
+
+	--higher agility leads to more directional variation
+	--lower agility leads to straighter paths
+	local agility_coefficient=10-cell["dna"]["agility"]
+	local dir=cell["dna"]["pattern"][cell.last_dir]
+	local changed_dir=false
+
+	if(flr(rnd(agility_coefficient))==0) then
+		if(dir==1) then
+			--right
+			cell.dir_x=1
+			cell.dir_y=0
+		elseif(dir==2) then
+			--down
+			cell.dir_x=0
+			cell.dir_y=1
+		elseif(dir==3) then
+			--up
+			cell.dir_x=0
+			cell.dir_y=-1
+		elseif(dir==4) then
+			--left
+			cell.dir_x=-1
+			cell.dir_y=0
+		end
+
+		changed_dir=true
 	end
 
-	--update cell move
-	cell.x+=cell.dir_x
-	cell.y+=cell.dir_y
+	--higher speed=more likely to move this cycle
+	local speed_coefficient=10-cell["dna"]["speed"]
+
+	if(flr(rnd(speed_coefficient))==0) then
+		--update cell move
+		cell.x+=cell.dir_x
+		cell.y+=cell.dir_y
 	
-	if(cell.last_move>=#cell["dna"]["pattern"]) then
-		cell.last_move=1
-	else
-		cell.last_move+=1
+		if(changed_dir) then
+			--track the last move and loop 
+			--back to the first if end is reached
+			if(cell.last_dir>=#cell["dna"]["pattern"]) then
+				cell.last_dir=1
+			else
+				cell.last_dir+=1
+			end
+		end
 	end
 	
-	--wrap boundaries
 	if(config.border==1) then
+		--trap them in
 		if(cell.y>127) cell.y=127
 		if(cell.y<0) cell.y=0
 		if(cell.x>127) cell.x=127
 		if(cell.x<0) cell.x=0
 	else
+		--wrap boundaries
 		if(cell.y>127) cell.y=0
 		if(cell.y<0) cell.y=127
 		if(cell.x>127) cell.x=0
@@ -253,15 +276,20 @@ function update_cell(cell)
 		consume_food(cell)
 	end
  
- 	--check health every second
-	if(cell.last_check<flr(upkeep.seconds)) then
-		cell.health-=1
-		if(cell.health==0) then
-			cell.state="dead"
-		end
+ 	--higher heartiness=higher chance to not lose health on this cycle
+	local heartiness_coefficient=1*cell["dna"]["heartiness"]
 
-		--update the last health check
-		cell.last_check=flr(upkeep.seconds)
+ 	if(flr(rnd(heartiness_coefficient))==0) then
+ 		--check health every second if the heartiness gate is passed
+		if(cell.last_check<flr(upkeep.seconds)) then
+			cell.health-=1
+			if(cell.health==0) then
+				cell.state="dead"
+			end
+
+			--update the last health check
+			cell.last_check=flr(upkeep.seconds)
+		end
 	end
 end
 
@@ -322,32 +350,6 @@ function copy(obj,seen)
 	return res
 end
 
--->8
---scraps
-
-function random_move(cell)
-	--make a random move
-	local move=flr(rnd(4))
-	if(move==0) then
-		--right
-		cell.dir_x=1
-		cell.dir_y=0
-	elseif(move==1) then
-		--down
-		cell.dir_x=0
-		cell.dir_y=1
-	elseif(move==2) then
-		--up
-		cell.dir_x=0
-		cell.dir_y=-1
-	elseif(move==3) then
-		--left
-		cell.dir_x=-1
-		cell.dir_y=0
-	end
-	
-	return cell
-end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
