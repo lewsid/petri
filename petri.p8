@@ -4,7 +4,7 @@ __lua__
 -- petri
 -- by lewsidboi/smolboigames, 2020
 
-version="a.0.9.2"
+version="a.0.9.3"
 
 --game parameters
 cells={}
@@ -140,16 +140,19 @@ function init_cell(parent)
 			end
 
 			if(roll==0) then
-				if(cell["dna"]["agility"]>0 and cell["dna"]["agility"]<10) then
-					cell["dna"]["agility"]+=mod
+				local new_agility = cell["dna"]["agility"]+mod
+				if(new_agility>0 and new_agility<=10) then
+					cell["dna"]["agility"]=new_agility
 				end
 			elseif(roll==1) then
-				if(cell["dna"]["speed"]>0 and cell["dna"]["speed"]<10) then
-					cell["dna"]["speed"]+=mod
+				local new_speed = cell["dna"]["speed"]+mod
+				if(new_speed>0 and new_speed<=10) then
+					cell["dna"]["speed"]=new_speed
 				end
 			elseif(roll==2) then
-				if(cell["dna"]["heartiness"]>0 and cell["dna"]["heartiness"]<10) then
-					cell["dna"]["heartiness"]+=mod
+				local new_heartiness = cell["dna"]["heartiness"]+mod
+				if(new_heartiness>0 and new_heartiness<=10) then
+					cell["dna"]["heartiness"]=new_heartiness
 				end
 			end
 				
