@@ -4,7 +4,7 @@ __lua__
 -- petri
 -- by lewsidboi/smolboigames, 2020
 
-version="a.0.8"
+version="a.0.9.2"
 
 --game parameters
 cells={}
@@ -13,15 +13,18 @@ food={}
 upkeep={frames=0,seconds=0}
 
 config={
-	food_sparsity=5,	--higher=less
-	food_rate=1,		--higher=slower
-	spawn_count=10,		--initial number of cells
-	border=1,			--trap them in if you want
-	mutation_rate=2, 	--higher=more mutations per birth
-	start_move_count=20,--base number of moves per cell
-	max_moves=60,		--max number of moves stored in DNA
-	food_col=4,			--color of food
-	show_ui=true		--show stats
+	food_sparsity=5,	  --higher=less
+	food_rate=1,		  --higher=slower
+	spawn_count=10,	  	  --initial number of cells
+	border=1,			  --trap them in if you want
+	mutation_rate=2, 	  --higher=more mutations per birth
+	start_move_count=20,  --base number of moves per cell
+	max_moves=60,		  --max number of moves stored in DNA
+	max_health=20,		  --max health (limits infinite food consumption)
+	food_col=4,			  --color of food
+	reproduction_req=15,  --health required to reproduce
+	reproduction_cost=5,  --health lost from reproduction
+	show_ui=true		  --show stats
 }
 
 stats={
@@ -112,7 +115,7 @@ function init_cell(parent)
 		--inherit dna
 		cell["dna"]=copy(parent["dna"])
  
-		--add pattern mutation(s)
+		--add pattern mutations
 		for i=1,config.mutation_rate do  
 			if(#cell["dna"]["pattern"]+1<config.max_moves) then
 				cell["dna"]["pattern"][#cell["dna"]["pattern"]+1]=flr(rnd(4))+1
@@ -122,6 +125,34 @@ function init_cell(parent)
 				local slot = rnd(#cell["dna"]["pattern"])+1;
 				cell["dna"]["pattern"][slot]=flr(rnd(4))+1
 			end
+		end
+
+		--add attribute mutations
+		if(flr(rnd(10-config.mutation_rate))==0) then
+			local roll=flr(rnd(3))
+			local spin=rnd(2)
+			local mod=nill
+
+			if(spin==0) then
+				mod=1
+			else
+				mod=-1
+			end
+
+			if(roll==0) then
+				if(cell["dna"]["agility"]>0 and cell["dna"]["agility"]<10) then
+					cell["dna"]["agility"]+=mod
+				end
+			elseif(roll==1) then
+				if(cell["dna"]["speed"]>0 and cell["dna"]["speed"]<10) then
+					cell["dna"]["speed"]+=mod
+				end
+			elseif(roll==2) then
+				if(cell["dna"]["heartiness"]>0 and cell["dna"]["heartiness"]<10) then
+					cell["dna"]["heartiness"]+=mod
+				end
+			end
+				
 		end
 	else
 		--set random attributes
@@ -147,7 +178,7 @@ function init_cell(parent)
 		end  
 	end
 	output=output..")]"
-	printh(output)
+	printh(output,"pertri_log.md",false,true)
  
 	--update generation counter
 	local dif=#cell["dna"]["pattern"]-config.start_move_count
@@ -204,8 +235,8 @@ function update_cell(cell)
 	end
 	
 	--reproduce
-	if(cell.health>15) then
-		cell.health-=5
+	if(cell.health>config.reproduction_req) then
+		cell.health-=config.reproduction_cost
 		new_cell=init_cell(cell)
 		stats.births+=1
 	end
@@ -271,19 +302,18 @@ function update_cell(cell)
 		if(cell.x<0) cell.x=127
 	end
 	
-	--consume food
-	if(food[cell.x][cell.y]==1) then
+	--consume food, if there is room in its belly
+	if(food[cell.x][cell.y]==1 
+		and cell.health<config.max_health) then
 		consume_food(cell)
 	end
  
  	--higher heartiness=higher chance to not lose health on this cycle
-	local heartiness_coefficient=1*cell["dna"]["heartiness"]
-
- 	if(flr(rnd(heartiness_coefficient))==0) then
+ 	if(flr(rnd(cell["dna"]["heartiness"]))==0) then
  		--check health every second if the heartiness gate is passed
 		if(cell.last_check<flr(upkeep.seconds)) then
 			cell.health-=1
-			if(cell.health==0) then
+			if(cell.health<=0) then
 				cell.state="dead"
 			end
 
