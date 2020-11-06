@@ -44,9 +44,13 @@ end
 
 function _update()
 	--clock upkeep
-	upkeep.seconds=upkeep.frames/30
-	upkeep.frames+=1
-	
+	if(upkeep.frames<30) then
+		upkeep.frames+=1
+	elseif(upkeep.frames==30) then
+		upkeep.seconds+=1
+		upkeep.frames=0
+	end
+
 	--respawn food
 	if(flr(rnd(config.food_rate))==0
 		and #cells>0) then
@@ -360,6 +364,12 @@ function draw_ui()
 
 	print("gen: "..stats.generation,2,30,1)
 	print("gen: "..stats.generation,1,29,7)
+
+	print("frames: "..upkeep.frames,2,37,1)
+	print("frames: "..upkeep.frames,1,36,7)
+
+	print("seconds: "..upkeep.seconds,2,44,1)
+	print("seconds: "..upkeep.seconds,1,43,7)
 end
 
 function draw_cell(cell)
