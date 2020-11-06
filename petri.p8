@@ -4,7 +4,7 @@ __lua__
 -- petri
 -- by lewsidboi/smolboigames, 2020
 
-version="a.0.9.4"
+version="a.0.9.5"
 
 --game parameters
 cells={}
@@ -13,8 +13,8 @@ food={}
 upkeep={frames=0,seconds=0}
 
 config={
-	debug=false,		  --enable debug mode/logging
-	food_sparsity=5,	  --higher=less
+	debug=true,		  	  --enable debug mode/logging
+	food_sparsity=3,	  --higher=less
 	food_rate=1,		  --higher=slower
 	spawn_count=10,	  	  --initial number of cells
 	border=1,			  --trap them in if you want
@@ -101,6 +101,15 @@ function init_pellet()
 end
 
 function init_cell(parent)
+	local roll=nil
+	local spin=nil
+	local mod=nil
+	local output=nil
+	local slot=nil
+	local new_agility=nil
+	local new_speed=nil
+	local new_heartiness=nil
+
 	--basic template
 	cell={
 		health=10,x=64,y=64,
@@ -136,16 +145,15 @@ function init_cell(parent)
 			else
 				--max moves was reached, randomly replace an existing one
 				--this prevents eventual out-of-memory issues
-				local slot = rnd(#cell["dna"]["pattern"])+1;
+				slot = rnd(#cell["dna"]["pattern"])+1;
 				cell["dna"]["pattern"][slot]=flr(rnd(4))+1
 			end
 		end
 
 		--add attribute mutations
 		if(flr(rnd(10-config.mutation_rate))==0) then
-			local roll=flr(rnd(3))
-			local spin=rnd(2)
-			local mod=nill
+			roll=flr(rnd(3))
+			spin=flr(rnd(2))
 
 			if(spin==0) then
 				mod=1
@@ -154,17 +162,17 @@ function init_cell(parent)
 			end
 
 			if(roll==0) then
-				local new_agility = cell["dna"]["agility"]+mod
+				new_agility = cell["dna"]["agility"]+mod
 				if(new_agility>0 and new_agility<=10) then
 					cell["dna"]["agility"]=new_agility
 				end
 			elseif(roll==1) then
-				local new_speed = cell["dna"]["speed"]+mod
+				new_speed = cell["dna"]["speed"]+mod
 				if(new_speed>0 and new_speed<=10) then
 					cell["dna"]["speed"]=new_speed
 				end
 			elseif(roll==2) then
-				local new_heartiness = cell["dna"]["heartiness"]+mod
+				new_heartiness = cell["dna"]["heartiness"]+mod
 				if(new_heartiness>0 and new_heartiness<=10) then
 					cell["dna"]["heartiness"]=new_heartiness
 				end
@@ -184,7 +192,7 @@ function init_cell(parent)
 	end
 
 	--output DNA
-	local output="["
+	output="["
 	output=output.."(agility: "..cell["dna"]["agility"]..")"
 	output=output.."(heartiness: "..cell["dna"]["heartiness"]..")"
 	output=output.."(speed: "..cell["dna"]["speed"]..")(moves: "
@@ -212,6 +220,10 @@ end
 --updates
 
 function update_cell(cell)
+	local agility_coefficient=nil
+	local direction=nil
+	local changed_dir=false
+
 	--handle cell death
 	if(cell.state=="dead") then
 		del(cells,cell)
@@ -253,24 +265,23 @@ function update_cell(cell)
 
 	--higher agility leads to more directional variation
 	--lower agility leads to straighter paths
-	local agility_coefficient=10-cell["dna"]["agility"]
-	local dir=cell["dna"]["pattern"][cell.last_dir]
-	local changed_dir=false
+	agility_coefficient=10-cell["dna"]["agility"]
+	direction=cell["dna"]["pattern"][cell.last_dir]
 
 	if(flr(rnd(agility_coefficient))==0) then
-		if(dir==1) then
+		if(direction==1) then
 			--right
 			cell.dir_x=1
 			cell.dir_y=0
-		elseif(dir==2) then
+		elseif(direction==2) then
 			--down
 			cell.dir_x=0
 			cell.dir_y=1
-		elseif(dir==3) then
+		elseif(direction==3) then
 			--up
 			cell.dir_x=0
 			cell.dir_y=-1
-		elseif(dir==4) then
+		elseif(direction==4) then
 			--left
 			cell.dir_x=-1
 			cell.dir_y=0
@@ -393,9 +404,9 @@ end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00700700000cc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0007700000caac000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00077000000cc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 00030000157001674018700197401a7001b7401c7001f740217002274025700267402670000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
