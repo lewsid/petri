@@ -4,7 +4,7 @@ __lua__
 -- petri
 -- by lewsidboi/smolboigames, 2020
 
-version="a.0.9.3"
+version="a.0.9.4"
 
 --game parameters
 cells={}
@@ -13,6 +13,7 @@ food={}
 upkeep={frames=0,seconds=0}
 
 config={
+	debug=false,		  --enable debug mode/logging
 	food_sparsity=5,	  --higher=less
 	food_rate=1,		  --higher=slower
 	spawn_count=10,	  	  --initial number of cells
@@ -107,6 +108,7 @@ function init_cell(parent)
 		last_check=0,
 		last_dir=1,
 		state="alive",
+		gen=0,
 		dna={}
 	}
  
@@ -118,6 +120,14 @@ function init_cell(parent)
 	
 		--inherit dna
 		cell["dna"]=copy(parent["dna"])
+
+		--increase the cell generation
+		cell.gen=parent.gen+1
+
+		--if this is the highest new gen make note
+		if(cell.gen>config.gen) then
+			config.gen=cell.gen
+		end
  
 		--add pattern mutations
 		for i=1,config.mutation_rate do  
@@ -185,7 +195,9 @@ function init_cell(parent)
 		end  
 	end
 	output=output..")]"
-	printh(output,"pertri_log.md",false,true)
+	if(config.debug=true) then
+		printh(output,"pertri_log.md",false,true)
+	end
  
 	--update generation counter
 	local dif=#cell["dna"]["pattern"]-config.start_move_count
@@ -364,12 +376,6 @@ function draw_ui()
 
 	print("gen: "..stats.generation,2,30,1)
 	print("gen: "..stats.generation,1,29,7)
-
-	print("frames: "..upkeep.frames,2,37,1)
-	print("frames: "..upkeep.frames,1,36,7)
-
-	print("seconds: "..upkeep.seconds,2,44,1)
-	print("seconds: "..upkeep.seconds,1,43,7)
 end
 
 function draw_cell(cell)
