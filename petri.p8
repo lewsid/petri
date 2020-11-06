@@ -195,7 +195,7 @@ function init_cell(parent)
 		end  
 	end
 	output=output..")]"
-	if(config.debug=true) then
+	if(config.debug==true) then
 		printh(output,"pertri_log.md",false,true)
 	end
  
