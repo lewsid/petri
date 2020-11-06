@@ -126,7 +126,7 @@ function init_cell(parent)
 
 		--if this is the highest new gen make note
 		if(cell.gen>config.gen) then
-			config.gen=cell.gen
+			stats.generation=cell.gen
 		end
  
 		--add pattern mutations
@@ -197,15 +197,6 @@ function init_cell(parent)
 	output=output..")]"
 	if(config.debug==true) then
 		printh(output,"pertri_log.md",false,true)
-	end
- 
-	--update generation counter
-	local dif=#cell["dna"]["pattern"]-config.start_move_count
- 
-	local gen=flr(dif/config.mutation_rate)
-  
-	if(gen>stats.generation) then
-		stats.generation=gen
 	end
  
 	--add cell
