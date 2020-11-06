@@ -125,7 +125,7 @@ function init_cell(parent)
 		cell.gen=parent.gen+1
 
 		--if this is the highest new gen make note
-		if(cell.gen>config.gen) then
+		if(cell.gen>stats.generation) then
 			stats.generation=cell.gen
 		end
  
