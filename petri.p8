@@ -4,7 +4,7 @@ __lua__
 -- petri
 -- by lewsidboi/smolboigames, 2020
 
-version="a.0.9.5"
+version="a.0.9.6"
 
 --game parameters
 cells={}
@@ -14,7 +14,7 @@ upkeep={frames=0,seconds=0}
 
 config={
 	debug=true,		  	  --enable debug mode/logging
-	food_sparsity=3,	  --higher=less
+	food_sparsity=5,	  --initial food amount, higher=less
 	food_rate=1,		  --higher=slower
 	spawn_count=10,	  	  --initial number of cells
 	border=1,			  --trap them in if you want
@@ -145,7 +145,7 @@ function init_cell(parent)
 			else
 				--max moves was reached, randomly replace an existing one
 				--this prevents eventual out-of-memory issues
-				slot = rnd(#cell["dna"]["pattern"])+1;
+				slot = flr(rnd(#cell["dna"]["pattern"]))+1;
 				cell["dna"]["pattern"][slot]=flr(rnd(4))+1
 			end
 		end
