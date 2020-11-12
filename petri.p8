@@ -4,11 +4,12 @@ __lua__
 -- petri
 -- by lewsidboi/smolboigames, 2020
 
-version="a.0.9.6"
+version="a.0.9.7"
 
 --game parameters
 cells={}
 food={}
+reticle={}
 
 upkeep={frames=0,seconds=0}
 
@@ -25,7 +26,9 @@ config={
 	food_col=4,			  --color of food
 	reproduction_req=15,  --health required to reproduce
 	reproduction_cost=5,  --health lost from reproduction
-	show_ui=true		  --show stats
+	show_ui=true,		  --show stats
+	show_tails=true,	  --show cell tails
+	show_reticle=false
 }
 
 stats={
@@ -38,6 +41,7 @@ stats={
 function _init()
 	cls()
 	init_food()
+	init_reticle()
 	for i=1,config.spawn_count do
 		init_cell()
 	end
@@ -61,10 +65,7 @@ function _update()
 	--update cells
 	foreach(cells,update_cell)
 	
-	--toggle stats display
-	if(btnp(❎)) then
-		config.show_ui=not(config.show_ui)
-	end
+	handle_input()
 end
 
 function _draw()
@@ -72,10 +73,21 @@ function _draw()
 	foreach(cells,draw_cell)
 	draw_food()
 	if(config.show_ui) draw_ui()
+	if(config.show_reticle) draw_reticle()
 end
 
 -->8
 --inits
+
+function init_reticle()
+	reticle={
+		sprite=2,
+		x=48,
+		y=48,
+		dir_x=0,
+		dir_y=0
+	}
+end
 
 function init_food()
 	for x=0,127 do
@@ -112,12 +124,17 @@ function init_cell(parent)
 
 	--basic template
 	cell={
-		health=10,x=64,y=64,
-		col=3,dir_x=0,dir_y=0,
+		health=10,
+		x=64,
+		y=64,
+		col=3,
+		dir_x=0,
+		dir_y=0,
 		last_check=0,
 		last_dir=1,
 		state="alive",
 		gen=0,
+		tail={},
 		dna={}
 	}
  
@@ -136,6 +153,14 @@ function init_cell(parent)
 		--if this is the highest new gen make note
 		if(cell.gen>stats.generation) then
 			stats.generation=cell.gen
+		end
+
+		--set tail starts
+		if(config.show_tails) then
+			cell.tail['x1']=cell.x
+			cell.tail['y1']=cell.y
+			cell.tail['x2']=cell.x
+			cell.tail['y2']=cell.y
 		end
  
 		--add pattern mutations
@@ -294,6 +319,18 @@ function update_cell(cell)
 	local speed_coefficient=10-cell["dna"]["speed"]
 
 	if(flr(rnd(speed_coefficient))==0) then
+		if(config.show_tails) then
+			--update tail
+			last_x=cell.tail['x1']
+			last_y=cell.tail['y1']
+			
+			--only update if necessary (otherwise tails appear shrunken)
+			if(cell.x!=last_x) cell.tail['x1']=cell.x
+			if(cell.y!=last_y) cell.tail['y1']=cell.y
+			if(cell.tail['x2']!=last_x) cell.tail['x2']=last_x
+			if(cell.tail['y2']!=last_y) cell.tail['y2']=last_y
+		end
+
 		--update cell move
 		cell.x+=cell.dir_x
 		cell.y+=cell.dir_y
@@ -350,6 +387,45 @@ function consume_food(cell)
 	stats.food_count-=1
 end
 
+function handle_input()
+	--toggle stats display
+	if(btnp(❎)) then
+		config.show_ui=not(config.show_ui)
+	end
+
+	--left
+	if(btn(0)) then
+		if(reticle.dir_x>-5) then
+			reticle.dir_x+=-1
+		end
+	elseif(reticle.dir_x<0) then
+		reticle.dir_x=0
+	end
+
+	--right
+	if(btn(1)) then
+		if(reticle.dir_x<5) then
+			reticle.dir_x+=1
+		end
+	elseif(reticle.dir_x>0) then
+		reticle.dir_x=0
+	end
+
+	--up
+	
+	--down
+	if(btn(3)) then
+		if(reticle.dir_y<5) then
+			reticle.dir_y+=1
+		end
+	elseif(reticle.dir_y<0) then
+		reticle.dir_y=0
+	end
+
+	reticle.x+=reticle.dir_x
+	reticle.y+=reticle.dir_y
+end
+
 -->8
 --draws
 
@@ -380,9 +456,17 @@ function draw_ui()
 	print("gen: "..stats.generation,1,29,7)
 end
 
+function draw_reticle()
+	spr(2,reticle.x,reticle.y)
+end
+
 function draw_cell(cell)
 	if(cell.state!="dead") then
 		pset(cell.x,cell.y,cell.col)
+		if(config.show_tails) then
+			pset(cell.tail['x1'],cell.tail['y1'],cell.col)
+			pset(cell.tail['x2'],cell.tail['y2'],cell.col)
+		end
 	end
 end
 
@@ -404,10 +488,10 @@ end
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700000cc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0007700000caac000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00077000000cc0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00700700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00700700000cc0000066660000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0007700000caac000060060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00077000000cc0000060060000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00700700000000000066660000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 00030000157001674018700197401a7001b7401c7001f740217002274025700267402670000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00010000100500e050100500050008500024000550003400034000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
