@@ -259,6 +259,13 @@ function update_cell(cell)
 		--turn it into food
 		food[cell.x][cell.y]=1
 		stats.food_count+=1
+
+		--if tails are on, turn those into food too
+		if(config.show_tails) then
+			food[cell.tail['x1']][cell.tail['y1']]=1
+			food[cell.tail['x2']][cell.tail['y2']]=1
+			stats.food_count+=2
+		end
 		
 		--count it
 		stats.deaths+=1
