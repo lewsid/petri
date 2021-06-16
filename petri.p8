@@ -2,9 +2,9 @@ pico-8 cartridge // http://www.pico-8.com
 version 29
 __lua__
 -- petri
--- by lewsidboi/smolboigames, 2020
+-- by lewsidboi/smolboigames, 2021
 
-version="a.0.9.7"
+version="a.0.9.8"
 
 --game parameters
 cells={}
@@ -18,7 +18,7 @@ config={
 	food_sparsity=5,	  --initial food amount, higher=less
 	food_rate=1,		  --higher=slower
 	spawn_count=10,	  	  --initial number of cells
-	border=1,			  --trap them in if you want
+	border=false,			  --trap them in if you want
 	mutation_rate=2, 	  --higher=more mutations per birth
 	start_move_count=20,  --base number of moves per cell
 	max_moves=60,		  --max number of moves stored in DNA
@@ -28,7 +28,7 @@ config={
 	reproduction_cost=5,  --health lost from reproduction
 	show_ui=true,		  --show stats
 	show_tails=true,	  --show cell tails
-	show_reticle=false
+	show_reticle=true
 }
 
 stats={
@@ -417,20 +417,41 @@ function handle_input()
 	elseif(reticle.dir_x>0) then
 		reticle.dir_x=0
 	end
-
-	--up
 	
-	--down
-	if(btn(3)) then
-		if(reticle.dir_y<5) then
-			reticle.dir_y+=1
+	--up
+	if(btn(2)) then
+		if(reticle.dir_y>-5) then
+			reticle.dir_y-=1
 		end
 	elseif(reticle.dir_y<0) then
 		reticle.dir_y=0
 	end
 
+	--down
+	if(btn(3)) then
+		if(reticle.dir_y<5) then
+			reticle.dir_y+=1
+		end
+	elseif(reticle.dir_y>0) then
+		reticle.dir_y=0
+	end
+
 	reticle.x+=reticle.dir_x
 	reticle.y+=reticle.dir_y
+
+	--loop reticle x pos
+	if(reticle.x<0) then
+		reticle.x=128
+	elseif(reticle.x>128) then
+		reticle.x=0
+	end
+
+	--loop reticle y pos
+	if(reticle.y<0) then
+		reticle.y=128
+	elseif(reticle.y>128) then
+		reticle.y=0
+	end
 end
 
 -->8
