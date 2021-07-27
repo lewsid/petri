@@ -243,7 +243,9 @@ function init_cell(parent)
 	add(cells,cell)
  
 	--play birth sound
- 	sfx(0)
+	if(config.started) then
+ 		sfx(0)
+ 	end
  
 	return cell
 end
