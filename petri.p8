@@ -4,7 +4,7 @@ __lua__
 -- petri
 -- by lewsidboi/smolboigames, 2021
 
-version="a.0.9.8"
+version="a.0.9.9"
 
 --game parameters
 cells={}
@@ -13,12 +13,18 @@ reticle={}
 
 upkeep={frames=0,seconds=0}
 
+splash={
+	logo_step=0,
+	logo_x=37,
+	logo_y=1
+}
+
 config={
 	debug=true,		  	  --enable debug mode/logging
 	food_sparsity=5,	  --initial food amount, higher=less
 	food_rate=1,		  --higher=slower
 	spawn_count=10,	  	  --initial number of cells
-	border=false,			  --trap them in if you want
+	border=false,		  --trap them in if you want
 	mutation_rate=2, 	  --higher=more mutations per birth
 	start_move_count=20,  --base number of moves per cell
 	max_moves=60,		  --max number of moves stored in DNA
@@ -28,7 +34,8 @@ config={
 	reproduction_cost=5,  --health lost from reproduction
 	show_ui=true,		  --show stats
 	show_tails=true,	  --show cell tails
-	show_reticle=true
+	show_reticle=true,    --show reticle
+	pause=false
 }
 
 stats={
@@ -40,6 +47,7 @@ stats={
 
 function _init()
 	cls()
+	sfx(2,0)
 	init_food()
 	init_reticle()
 	for i=1,config.spawn_count do
@@ -48,32 +56,31 @@ function _init()
 end
 
 function _update()
-	--clock upkeep
-	if(upkeep.frames<30) then
-		upkeep.frames+=1
-	elseif(upkeep.frames==30) then
-		upkeep.seconds+=1
-		upkeep.frames=0
-	end
+	update_clock()
 
-	--respawn food
-	if(flr(rnd(config.food_rate))==0
-		and #cells>0) then
-		init_pellet()
+	if(config.started!=true) then
+		update_logo()
+	else
+		update_food()
+	
+		--update cells
+		foreach(cells,update_cell)
+		
+		handle_input()
 	end
-	
-	--update cells
-	foreach(cells,update_cell)
-	
-	handle_input()
 end
 
 function _draw()
 	cls(0)
-	foreach(cells,draw_cell)
-	draw_food()
-	if(config.show_ui) draw_ui()
-	if(config.show_reticle) draw_reticle()
+
+	if(config.started!=true) then
+		draw_logo()
+	else
+		foreach(cells,draw_cell)
+		draw_food()
+		if(config.show_ui) draw_ui()
+		if(config.show_reticle) draw_reticle()
+	end
 end
 
 -->8
@@ -244,6 +251,35 @@ end
 -->8
 --updates
 
+function update_clock()
+	if(upkeep.frames<30) then
+		upkeep.frames+=1
+	elseif(upkeep.frames==30) then
+		upkeep.seconds+=1
+		upkeep.frames=0
+	end
+end
+
+function update_logo()
+	if(splash.logo_y<60) then
+		splash.logo_y+=1
+	elseif(splash.logo_step==0 and upkeep.seconds>2) then
+		splash.logo_step=1
+	elseif(splash.logo_step==1) then
+		splash.logo_step=2
+	elseif(splash.logo_step==2) then
+		splash.logo_step=3
+		config.started=true
+	end
+end
+
+function update_food()
+	if(flr(rnd(config.food_rate))==0
+		and #cells>0) then
+		init_pellet()
+	end
+end
+
 function update_cell(cell)
 	local agility_coefficient=nil
 	local direction=nil
@@ -396,8 +432,13 @@ end
 
 function handle_input()
 	--toggle stats display
-	if(btnp(❎)) then
+	if(btnp(5)) then
 		config.show_ui=not(config.show_ui)
+	end
+
+	--toggle pause
+	if(btnp(4)) then
+		config.pause=not(config.pause)
 	end
 
 	--left
@@ -456,6 +497,24 @@ end
 
 -->8
 --draws
+
+function draw_logo()
+	if(splash.logo_step==0) then
+		print("smolboi games",
+			splash.logo_x,splash.logo_y-1,0)
+		print("smolboi games",
+			splash.logo_x,splash.logo_y,12)
+	elseif(splash.logo_step==1) then
+		print("smolboi games",
+			splash.logo_x,splash.logo_y,13)
+	elseif(splash.logo_step==2) then
+		print("smolboi games",
+			splash.logo_x,splash.logo_y,1)
+	elseif(splash.logo_step==3) then
+		print("smolboi games",
+			splash.logo_x,splash.logo_y,0)
+	end
+end
 
 function draw_food()
 	for x=0,127 do
@@ -523,3 +582,4 @@ __gfx__
 __sfx__
 00030000157001674018700197401a7001b7401c7001f740217002274025700267402670000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00010000100500e050100500050008500024000550003400034000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000e0000220551b0551e05519055250551300531005300052f0052f0051e0552e0052d00524005270552d00522005330552d0052400525005260052e005280052e005290052f0052c00530005300053100532005
