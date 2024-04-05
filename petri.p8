@@ -29,11 +29,11 @@ intro={
 }
 
 config={
-	debug=true, --enable debug mode/logging
+	debug=false, --enable debug mode/logging
 	show_log=false, --show log
 	last_log={},
 	last_dna={},
-	food_sparsity=10, --initial food amount, higher=less
+	food_sparsity=8, --initial food amount, higher=less
 	food_rate=5, --spawn rate higher=slower
 	food_batch_size=1, --how many food pellets spawn at once
 	spawn_count=30, --initial number of cells
@@ -78,16 +78,14 @@ function _update()
 		update_intro()
 	else
 		update_food()
-	
-		--update cells
 		foreach(cells,update_cell)
-		
 		handle_input()
 	end
 end
 
 function _draw()
-	cls(0)
+	pal(15, 129, 1)
+	cls(15)
 
 	if(config.debug == true) then
 		splash.complete=true
@@ -100,16 +98,7 @@ function _draw()
 		draw_intro()
 	else
 		if(config.show_log) then
-			--print out the most recent additions to the log
-			for i=1,18 do
-				if(config.last_log[#config.last_log-i+1]!=nil) then
-					--output last log scroll from the bottom up, with some padding
-					print(config.last_log[#config.last_log-i+1],0,127-i*7,7)
-					
-					--apend image of DNA
-					draw_dna(config.last_dna[#config.last_dna-i+1],-1,i*7)
-				end
-			end
+			draw_log()
 		else
 			foreach(cells,draw_cell)
 			draw_food()
@@ -644,24 +633,25 @@ end
 
 function draw_intro()
  sspr(0,64,47,87,15,20,100,200)
- print("press ❎ to start",29,100,6)
+ print("press ❎ to start",31,101,0)
+ print("press ❎ to start",30,100,6)
 end
 
 function draw_splash()
 	if(splash.logo_step==0) then
-		print("smolboi games",
+		print("SMOLBOI labs",
 			splash.logo_x,splash.logo_y-1,0)
-		print("smolboi games",
+		print("SMOLBOI labs",
 			splash.logo_x,splash.logo_y,12)
 	elseif(splash.logo_step==1) then
-		print("smolboi games",
+		print("SMOLBOI labs",
 			splash.logo_x,splash.logo_y,13)
 	elseif(splash.logo_step==2) then
-		print("smolboi games",
+		print("SMOLBOI labs",
 			splash.logo_x,splash.logo_y,1)
 	elseif(splash.logo_step==3) then
-		print("smolboi games",
-			splash.logo_x,splash.logo_y,0)
+		print("SMOLBOI labs",
+			splash.logo_x,splash.logo_y,15)
 	end
 end
 
@@ -676,19 +666,19 @@ function draw_food()
 end
 
 function draw_stats()
-	print("ALIVE: "..#cells,3,3,1)
+	print("ALIVE: "..#cells,3,3,0)
 	print("ALIVE: "..#cells,2,2,7)
 	
-	print("BIRTHS: "..stats.births,3,10,1)
+	print("BIRTHS: "..stats.births,3,10,0)
 	print("BIRTHS: "..stats.births,2,9,7)
 	
-	print("DEATHS: "..stats.deaths,3,17,1)
+	print("DEATHS: "..stats.deaths,3,17,0)
 	print("DEATHS: "..stats.deaths,2,16,7)
 
-	print("FOOD: "..stats.food_count,3,24,1)
+	print("FOOD: "..stats.food_count,3,24,0)
 	print("FOOD: "..stats.food_count,2,23,7)
 
-	print("GENERATION: "..stats.generation,3,31,1)
+	print("GENERATION: "..stats.generation,3,31,0)
 	print("GENERATION: "..stats.generation,2,30,7)
 end
 
@@ -719,7 +709,20 @@ function draw_dna(dna,x,y)
 			pset(x+i,y,11)
 		end
 	end
-	
+end
+
+function draw_log()
+	--print out the most recent additions to the log
+	cls(1)
+	for i=1,18 do
+		if(config.last_log[#config.last_log-i+1]!=nil) then
+			--output last log scroll from the bottom up, with some padding
+			print(config.last_log[#config.last_log-i+1],0,127-i*7,7)
+			
+			--apend image of DNA
+			draw_dna(config.last_dna[#config.last_dna-i+1],-1,i*7)
+		end
+	end
 end
 
 -->8
