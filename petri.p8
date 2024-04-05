@@ -1,5 +1,5 @@
 pico-8 cartridge // http://www.pico-8.com
-version 34
+version 41
 __lua__
 -- petri
 -- by lewsidboi/smolboigames, 2021
@@ -25,25 +25,25 @@ intro={
 	sprite=128,
 	width=45,
 	height=30,
- complete=false
+	complete=false
 }
 
 config={
-	debug=true,		  	  --enable debug mode/logging
-	food_sparsity=5,	  --initial food amount, higher=less
-	food_rate=1,		  --higher=slower
-	spawn_count=10,	  	  --initial number of cells
-	border=false,		  --trap them in if you want
-	mutation_rate=2, 	  --higher=more mutations per birth
-	start_move_count=20,  --base number of moves per cell
-	max_moves=60,		  --max number of moves stored in dna
-	max_health=20,		  --max health (limits infinite food consumption)
-	food_col=4,			  --color of food
-	reproduction_req=15,  --health required to reproduce
-	reproduction_cost=5,  --health lost from reproduction
-	show_ui=true,		  --show stats
-	show_tails=true,	  --show cell tails
-	show_reticle=false,    --show reticle
+	debug=true, --enable debug mode/logging
+	food_sparsity=10, --initial food amount, higher=less
+	food_rate=10, --higher=slower
+	spawn_count=30, --initial number of cells
+	border=1, --trap them in if you want
+	mutation_rate=2, --higher=more mutations per birth
+	start_move_count=20, --base number of moves per cell
+	max_moves=60, --max number of moves stored in dna
+	max_health=20, --max health (limits infinite food consumption)
+	food_col=4,	--color of food
+	reproduction_req=15, --health required to reproduce
+	reproduction_cost=5, --health lost from reproduction
+	show_ui=true, --show stats
+	show_tails=true, --show cell tails
+	show_reticle=false, --show reticle
 	pause=false
 }
 
@@ -55,6 +55,7 @@ stats={
 }
 
 function _init()
+	init_menu()
 	cls()
 	sfx(2,0)
 	init_food()
@@ -84,6 +85,11 @@ end
 function _draw()
 	cls(0)
 
+	if(config.debug == true) then
+		splash.complete=true
+		intro.complete=true
+	end
+
 	if(splash.complete!=true) then
 		draw_splash()
 	elseif(intro.complete!=true) then
@@ -93,11 +99,25 @@ function _draw()
 		draw_food()
 		if(config.show_ui) draw_ui()
 		if(config.show_reticle) draw_reticle()
+		if(config.border==1) rect(0,0,127,127,6)
 	end
 end
 
 -->8
 --inits
+
+function init_menu()
+	menuitem(1, "disable border", function()
+		if(config.border==1) then
+			config.border=0
+			menuitem(1, "enable border")
+		else
+			config.border=1
+			menuitem(1, "disable border")
+		end
+		return true
+	end)
+end
 
 function init_reticle()
 	reticle={
@@ -267,9 +287,9 @@ end
 --updates
 
 function update_intro()
- if(btnp(4) or btnp(5)) then
-  intro.complete=true
- end
+	if(btnp(4) or btnp(5)) then
+		intro.complete=true
+	end
 end
 
 function update_clock()
@@ -282,7 +302,7 @@ function update_clock()
 end
 
 function update_logo()
-	if(splash.logo_y<60) then
+	if(splash.logo_y<58) then
 		splash.logo_y+=1
 	elseif(splash.logo_step==0 and upkeep.seconds>2) then
 		splash.logo_step=1
@@ -413,10 +433,10 @@ function update_cell(cell)
 	
 	if(config.border==1) then
 		--trap them in
-		if(cell.y>127) cell.y=127
-		if(cell.y<0) cell.y=0
-		if(cell.x>127) cell.x=127
-		if(cell.x<0) cell.x=0
+		if(cell.y>126) cell.y=126
+		if(cell.y<1) cell.y=1
+		if(cell.x>126) cell.x=126
+		if(cell.x<1) cell.x=1
 	else
 		--wrap boundaries
 		if(cell.y>127) cell.y=0
@@ -554,20 +574,20 @@ function draw_food()
 end
 
 function draw_ui()
-	print("alive: "..#cells,2,2,1)
-	print("alive: "..#cells,1,1,7)
+	print("alive: "..#cells,3,3,1)
+	print("alive: "..#cells,2,2,7)
 	
-	print("births: "..stats.births,2,9,1)
-	print("births: "..stats.births,1,8,7)
+	print("births: "..stats.births,3,10,1)
+	print("births: "..stats.births,2,9,7)
 	
-	print("deaths: "..stats.deaths,2,16,1)
-	print("deaths: "..stats.deaths,1,15,7)
+	print("deaths: "..stats.deaths,3,17,1)
+	print("deaths: "..stats.deaths,2,16,7)
 
-	print("food: "..stats.food_count,2,23,1)
-	print("food: "..stats.food_count,1,22,7)
+	print("food: "..stats.food_count,3,24,1)
+	print("food: "..stats.food_count,2,23,7)
 
-	print("gen: "..stats.generation,2,30,1)
-	print("gen: "..stats.generation,1,29,7)
+	print("gen: "..stats.generation,3,31,1)
+	print("gen: "..stats.generation,2,30,7)
 end
 
 function draw_reticle()
