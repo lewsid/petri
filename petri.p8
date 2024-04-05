@@ -30,8 +30,12 @@ intro={
 
 config={
 	debug=true, --enable debug mode/logging
+	show_log=false, --show log
+	last_log={},
+	last_dna={},
 	food_sparsity=10, --initial food amount, higher=less
-	food_rate=10, --higher=slower
+	food_rate=10, --spawn rate higher=slower
+	food_batch_size=1, --how many food pellets spawn at once
 	spawn_count=30, --initial number of cells
 	border=1, --trap them in if you want
 	mutation_rate=2, --higher=more mutations per birth
@@ -41,7 +45,7 @@ config={
 	food_col=4,	--color of food
 	reproduction_req=15, --health required to reproduce
 	reproduction_cost=5, --health lost from reproduction
-	show_ui=true, --show stats
+	show_stats=true, --show stats
 	show_tails=true, --show cell tails
 	show_reticle=false, --show reticle
 	pause=false
@@ -95,11 +99,24 @@ function _draw()
 	elseif(intro.complete!=true) then
 		draw_intro()
 	else
-		foreach(cells,draw_cell)
-		draw_food()
-		if(config.show_ui) draw_ui()
-		if(config.show_reticle) draw_reticle()
-		if(config.border==1) rect(0,0,127,127,6)
+		if(config.show_log) then
+			--print out the most recent additions to the log
+			for i=1,18 do
+				if(config.last_log[#config.last_log-i+1]!=nil) then
+					--output last log scroll from the bottom up, with some padding
+					print(config.last_log[#config.last_log-i+1],0,127-i*7,7)
+					
+					--apend image of DNA
+					draw_dna(config.last_dna[#config.last_dna-i+1],-1,i*7)
+				end
+			end
+		else
+			foreach(cells,draw_cell)
+			draw_food()
+			if(config.show_stats) draw_stats()
+			if(config.show_reticle) draw_reticle()
+			if(config.border==1) rect(0,0,127,127,6)
+		end
 	end
 end
 
@@ -107,6 +124,25 @@ end
 --inits
 
 function init_menu()
+	menuitem(0, "spawn "..config.spawn_count.." cells", function(b) 
+		if(b&1>0) then
+			if(config.spawn_count>1) then
+				config.spawn_count-=1
+			end
+		elseif(b&2>0) then
+			if(config.spawn_count<60) then
+				config.spawn_count+=1
+			end
+		elseif(b&32 > 0) then
+			for i=1,config.spawn_count do
+				init_cell()
+			end
+		end
+		menuitem(1, "spawn "..config.spawn_count.." cells")
+		
+		return false
+	end)
+
 	menuitem(1, "disable border", function()
 		if(config.border==1) then
 			config.border=0
@@ -114,6 +150,59 @@ function init_menu()
 		else
 			config.border=1
 			menuitem(1, "disable border")
+		end
+		return true
+	end)
+
+	menuitem(2, "food delay:"..config.food_rate, function(b)
+		if(b&1>0) then
+			if(config.food_rate>1) then
+				config.food_rate-=1
+			end
+		elseif(b&2>0) then
+			if(config.food_rate<40) then
+				config.food_rate+=1
+			end
+		end
+		menuitem(3, "food delay:"..config.food_rate)
+		return true
+	end)
+
+	menuitem(3, "food density:"..config.food_batch_size, function(b)
+		if(b&1>0) then
+			if(config.food_batch_size>1) then
+				config.food_batch_size-=1
+			end
+		elseif(b&2>0) then
+			if(config.food_batch_size<10) then
+				config.food_batch_size+=1
+			end
+		end
+		menuitem(4, "food density:"..config.food_batch_size)
+		return true
+	end)
+
+	menuitem(4, "mutation rate:"..config.mutation_rate, function(b)
+		if(b&1>0) then
+			if(config.mutation_rate>1) then
+				config.mutation_rate-=1
+			end
+		elseif(b&2>0) then
+			if(config.mutation_rate<10) then
+				config.mutation_rate+=1
+			end
+		end
+		menuitem(5, "mutation rate:"..config.mutation_rate)
+		return true
+	end)
+
+	menuitem(5, "toggle tails", function()
+		if(config.show_tails) then
+			config.show_tails=false
+			menuitem(2, "show tails")
+		else
+			config.show_tails=true
+			menuitem(2, "hide tails")
 		end
 		return true
 	end)
@@ -257,17 +346,21 @@ function init_cell(parent)
 	end
 
 	--output dna
-	output="["
-	output=output.."(agility: "..cell["dna"]["agility"]..")"
-	output=output.."(heartiness: "..cell["dna"]["heartiness"]..")"
-	output=output.."(speed: "..cell["dna"]["speed"]..")(moves: "
-	for i=1,#cell["dna"]["pattern"] do
-		output=output..cell["dna"]["pattern"][i];
-		if(i!=#cell["dna"]["pattern"]) then
-			output=output.."|"
-		end  
+	output=""
+	output=output.."GEN:"..cell.gen.." "
+	output=output.."AGI:"..cell["dna"]["agility"].." "
+	output=output.."STR:"..cell["dna"]["heartiness"].." "
+	output=output.."SPD:"..cell["dna"]["speed"].." "
+	
+	--push output to log table
+	add(config.last_log,output)
+	add(config.last_dna,cell["dna"]["pattern"])
+
+	if(#config.last_log>18) then
+		del(config.last_log,1)
+		del(config.last_dna,1)
 	end
-	output=output..")]"
+
 	if(config.debug==true) then
 		printh(output,"pertri_log.md",false,true)
 	end
@@ -318,7 +411,9 @@ end
 function update_food()
 	if(flr(rnd(config.food_rate))==0
 		and #cells>0) then
-		init_pellet()
+		for i=1,config.food_batch_size do
+			init_pellet()
+		end
 	end
 end
 
@@ -475,7 +570,14 @@ end
 function handle_input()
 	--toggle stats display
 	if(btnp(5)) then
-		config.show_ui=not(config.show_ui)
+		if(config.show_stats and not config.show_log) then
+			config.show_log=true
+		elseif(config.show_log) then
+			config.show_stats=false
+			config.show_log=false
+		else
+			config.show_stats=true
+		end
 	end
 
 	--toggle pause
@@ -573,21 +675,21 @@ function draw_food()
 	end
 end
 
-function draw_ui()
-	print("alive: "..#cells,3,3,1)
-	print("alive: "..#cells,2,2,7)
+function draw_stats()
+	print("ALIVE: "..#cells,3,3,1)
+	print("ALIVE: "..#cells,2,2,7)
 	
-	print("births: "..stats.births,3,10,1)
-	print("births: "..stats.births,2,9,7)
+	print("BIRTHS: "..stats.births,3,10,1)
+	print("BIRTHS: "..stats.births,2,9,7)
 	
-	print("deaths: "..stats.deaths,3,17,1)
-	print("deaths: "..stats.deaths,2,16,7)
+	print("DEATHS: "..stats.deaths,3,17,1)
+	print("DEATHS: "..stats.deaths,2,16,7)
 
-	print("food: "..stats.food_count,3,24,1)
-	print("food: "..stats.food_count,2,23,7)
+	print("FOOD: "..stats.food_count,3,24,1)
+	print("FOOD: "..stats.food_count,2,23,7)
 
-	print("gen: "..stats.generation,3,31,1)
-	print("gen: "..stats.generation,2,30,7)
+	print("GENERATION: "..stats.generation,3,31,1)
+	print("GENERATION: "..stats.generation,2,30,7)
 end
 
 function draw_reticle()
@@ -602,6 +704,22 @@ function draw_cell(cell)
 			pset(cell.tail['x2'],cell.tail['y2'],cell.col)
 		end
 	end
+end
+
+--display dna move set as sprite
+function draw_dna(dna,x,y)
+	for i=1,#dna do
+		if(dna[i]==1) then
+			pset(x+i,y,12)
+		elseif(dna[i]==2) then
+			pset(x+i,y,9)
+		elseif(dna[i]==3) then
+			pset(x+i,y,10)
+		elseif(dna[i]==4) then
+			pset(x+i,y,11)
+		end
+	end
+	
 end
 
 -->8
