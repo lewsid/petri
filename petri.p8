@@ -34,7 +34,7 @@ config={
 	last_log={},
 	last_dna={},
 	food_sparsity=10, --initial food amount, higher=less
-	food_rate=10, --spawn rate higher=slower
+	food_rate=5, --spawn rate higher=slower
 	food_batch_size=1, --how many food pellets spawn at once
 	spawn_count=30, --initial number of cells
 	border=1, --trap them in if you want
