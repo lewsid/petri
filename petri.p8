@@ -84,7 +84,8 @@ function _update()
 end
 
 function _draw()
-	pal(15, 129, 1)
+	--pull from the extended palette
+	pal(15,129,1)
 	cls(15)
 
 	if(config.debug == true) then
@@ -113,7 +114,7 @@ end
 --inits
 
 function init_menu()
-	menuitem(0, "spawn "..config.spawn_count.." cells", function(b) 
+	menuitem(1, "spawn "..config.spawn_count.." cells", function(b) 
 		if(b&1>0) then
 			if(config.spawn_count>1) then
 				config.spawn_count-=1
@@ -132,7 +133,7 @@ function init_menu()
 		return false
 	end)
 
-	menuitem(1, "disable border", function()
+	menuitem(2, "disable border", function()
 		if(config.border==1) then
 			config.border=0
 			menuitem(1, "enable border")
@@ -143,7 +144,7 @@ function init_menu()
 		return true
 	end)
 
-	menuitem(2, "food delay:"..config.food_rate, function(b)
+	menuitem(3, "food delay:"..config.food_rate, function(b)
 		if(b&1>0) then
 			if(config.food_rate>1) then
 				config.food_rate-=1
@@ -157,7 +158,7 @@ function init_menu()
 		return true
 	end)
 
-	menuitem(3, "food density:"..config.food_batch_size, function(b)
+	menuitem(4, "food density:"..config.food_batch_size, function(b)
 		if(b&1>0) then
 			if(config.food_batch_size>1) then
 				config.food_batch_size-=1
@@ -171,7 +172,7 @@ function init_menu()
 		return true
 	end)
 
-	menuitem(4, "mutation rate:"..config.mutation_rate, function(b)
+	menuitem(5, "mutation rate:"..config.mutation_rate, function(b)
 		if(b&1>0) then
 			if(config.mutation_rate>1) then
 				config.mutation_rate-=1
@@ -185,16 +186,16 @@ function init_menu()
 		return true
 	end)
 
-	menuitem(5, "toggle tails", function()
-		if(config.show_tails) then
-			config.show_tails=false
-			menuitem(2, "show tails")
-		else
-			config.show_tails=true
-			menuitem(2, "hide tails")
-		end
-		return true
-	end)
+	-- menuitem(5, "toggle tails", function()
+	-- 	if(config.show_tails) then
+	-- 		config.show_tails=false
+	-- 		menuitem(2, "show tails")
+	-- 	else
+	-- 		config.show_tails=true
+	-- 		menuitem(2, "hide tails")
+	-- 	end
+	-- 	return true
+	-- end)
 end
 
 function init_reticle()
