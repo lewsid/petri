@@ -2,9 +2,9 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 -- petri
--- by lewsidboi/smolboigames, 2021
+-- by smolboigames/labs, 2024
 
-version="a.1.0.1"
+version="v.1.0.0"
 
 --game parameters
 cells={}
