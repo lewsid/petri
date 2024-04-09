@@ -136,10 +136,10 @@ function init_menu()
 	menuitem(2, "disable border", function()
 		if(config.border==1) then
 			config.border=0
-			menuitem(1, "enable border")
+			menuitem(2, "enable border")
 		else
 			config.border=1
-			menuitem(1, "disable border")
+			menuitem(2, "disable border")
 		end
 		return true
 	end)
